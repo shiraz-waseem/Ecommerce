@@ -1,4 +1,8 @@
 const Order = require("../models/Order");
+const User = require("../models/User");
+const Product = require("../models/Product");
+
+const { sendMail, invoiceTemplate } = require("../services/common");
 
 const fetchOrdersByUser = async (req, res) => {
   // extracts the user parameter from the query string of the incoming request. For example,
@@ -17,8 +21,25 @@ const fetchOrdersByUser = async (req, res) => {
 
 const createOrder = async (req, res) => {
   const order = new Order(req.body);
+
+  // here we have to update stocks;
+  for (let item of order.items) {
+    let product = await Product.findOne({ _id: item.product.id });
+    // We dont have any decrement operator but increment ka ha. Mongoose increment
+    product.$inc("stock", -1 * item.quantity);
+    // for optimum performance we should make inventory outside of product.
+    await product.save();
+  }
+
   try {
     const doc = await order.save();
+    const user = await User.findById(order.user); // order ke model mein user ha
+    // we can use await for this also. Here we are using directly taky non blocking rhy frontend py bhi response ata placed successfully sentmail time leta so we want background mein chala ye
+    sendMail({
+      to: user.email,
+      html: invoiceTemplate(order),
+      subject: "Order Received",
+    });
     console.log(doc);
     res.status(201).json(doc);
   } catch (err) {
