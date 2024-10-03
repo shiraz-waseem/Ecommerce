@@ -126,7 +126,8 @@ opts.jwtFromRequest = cookieExtractor;
 opts.secretOrKey = SECRET_KEY;
 
 const port = process.env.PORT;
-app.use(express.json()); // to parse req.body
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 // app.use(express.static("build"));
 app.use(express.static(path.resolve(__dirname, "build")));
 // console.log(path.resolve(__dirname, "build")); E:\Another Ecommerce\ecommerce\MERN-E-commerce\server\build
@@ -148,7 +149,7 @@ app.use(
     exposedHeaders: ["X-Total-Count"],
   })
 );
-app.use(express.urlencoded({ extended: false }));
+// app.use(express.urlencoded({ extended: false }));
 
 //APIS
 app.use("/products", isAuth(), productsRouter);
@@ -218,7 +219,7 @@ passport.use(
 passport.use(
   "jwt",
   new JwtStrategy(opts, async function (jwt_payload, done) {
-    console.log({ jwt_payload });
+    // console.log({ jwt_payload });
     try {
       const user = await User.findById(jwt_payload.id);
       if (user) {
@@ -234,7 +235,7 @@ passport.use(
 
 // this creates session variable req.user on being called from callbacks. Jab ap first time login krte
 passport.serializeUser(function (user, cb) {
-  console.log("serialize", user); // it returnd a to z everything about user so
+  // console.log("serialize", user); // it returnd a to z everything about user so
   process.nextTick(function () {
     return cb(null, {
       id: user.id,
